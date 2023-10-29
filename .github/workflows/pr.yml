@@ -1,0 +1,19 @@
+name: Pull Request Build
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build
+  tests:
+    runs-on: ubuntu-latest
+    name: Unit tests
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unit tests
+        run: cargo test
