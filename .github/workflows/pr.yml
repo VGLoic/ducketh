@@ -3,6 +3,13 @@ on:
   pull_request:
 
 jobs:
+  check-format:
+    runs-on: ubuntu-latest
+    name: Check format
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check format
+        run: cargo fmt --check
   build:
     runs-on: ubuntu-latest
     name: Build
