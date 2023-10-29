@@ -3,7 +3,13 @@ name = "ducketh"
 version = "0.1.0"
 edition = "2021"
 authors = ["Loïc Vincent-Genod <vincent.genod.loic@gmail.com>"]
-description = "A simple CLI tool to decode Ethereum data"
+license = "MIT"
+description = "Ducketh is your local companion when trying to decode some unknown Ethereum smart contract signature."
+readme = "README.md"
+homepage = "https://github.com/vgloic/ducketh"
+repository = "https://github.com/vgloic/ducketh"
+keywords = ["cli", "search", "ethereum", "eth", "web3"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
