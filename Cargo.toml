@@ -1,0 +1,26 @@
+[package]
+name = "ducketh"
+version = "0.1.0"
+edition = "2021"
+authors = ["Loïc Vincent-Genod <vincent.genod.loic@gmail.com>"]
+license = "MIT"
+description = "Ducketh is your local companion when trying to decode some unknown Ethereum smart contract signature."
+readme = "README.md"
+homepage = "https://github.com/vgloic/ducketh"
+repository = "https://github.com/vgloic/ducketh"
+keywords = ["cli", "search", "ethereum", "eth", "web3"]
+categories = ["command-line-utilities"]
+exclude = [
+    "test-data",
+]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+alloy-json-abi = "0.3.2"
+alloy-primitives = "0.3.3"
+clap = { version = "4.4.4", features = ["derive"] }
+dirs = "5.0.1"
+rand = "0.8.5"
+serde = "1.0.188"
+serde_json = "1.0.107"

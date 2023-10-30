@@ -1,0 +1,26 @@
+name: Pull Request Build
+on:
+  pull_request:
+
+jobs:
+  check-format:
+    runs-on: ubuntu-latest
+    name: Check format
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check format
+        run: cargo fmt --check
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build
+  tests:
+    runs-on: ubuntu-latest
+    name: Unit tests
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unit tests
+        run: cargo test
