@@ -62,20 +62,21 @@ jobs:
                   PLATFORM_NAME: ${{ matrix.job.platform }}
                   TARGET: ${{ matrix.job.target }}
                   ARCH: ${{ matrix.job.arch }}
+                  VERSION_NAME: "${GITHUB_REF_NAME}"
               shell: bash
               run: |
-                  echo "REF NAME -> ${GITHUB_REF_NAME}";
+                  echo "VERSION NAME -> ${VERSION_NAME}";
                   if [ "$PLATFORM_NAME" == "linux" ]; then
-                    tar -czvf "ducketh_${GITHUB_REF_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" -C ./target/${TARGET}/release ducketh
-                    echo "file_name=ducketh_${GITHUB_REF_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" >> $GITHUB_OUTPUT
+                    tar -czvf "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" -C ./target/${TARGET}/release ducketh
+                    echo "file_name=ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" >> $GITHUB_OUTPUT
                   elif [ "$PLATFORM_NAME" == "darwin" ]; then
                     # We need to use gtar here otherwise the archive is corrupt.
                     # See: https://github.com/actions/virtual-environments/issues/2619
-                    gtar -czvf "ducketh_${GITHUB_REF_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" -C ./target/${TARGET}/release ducketh
-                    echo "file_name=ducketh_${GITHUB_REF_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" >> $GITHUB_OUTPUT
+                    gtar -czvf "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" -C ./target/${TARGET}/release ducketh
+                    echo "file_name=ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" >> $GITHUB_OUTPUT
                   else
                     cd ./target/${TARGET}/release
-                    7z a -tzip "ducketh_${GITHUB_REF_NAME}_${PLATFORM_NAME}_${ARCH}.zip" ducketh.exe
-                    mv "ducketh_${GITHUB_REF_NAME}_${PLATFORM_NAME}_${ARCH}.zip" ../../../
-                    echo "file_name=ducketh_${GITHUB_REF_NAME}_${PLATFORM_NAME}_${ARCH}.zip" >> $GITHUB_OUTPUT
+                    7z a -tzip "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.zip" ducketh.exe
+                    mv "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.zip" ../../../
+                    echo "file_name=ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.zip" >> $GITHUB_OUTPUT
                   fi
