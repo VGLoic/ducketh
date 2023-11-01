@@ -25,8 +25,24 @@ jobs:
       - name: Unit tests
         run: cargo test
         
-  # Extracted from https://github.com/foundry-rs/foundry/blob/master/.github/workflows/release.yml
+  # Changelog and release workflow extracted from https://github.com/foundry-rs/foundry/blob/master/.github/workflows/release.yml
+  changelog:
+    name: Build changelog
+    runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.build_changelog.outputs.changelog }}
+    steps:
+      - name: Build changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+            configuration: "./.github/changelog.json"
+            fromTag: "''"
+            toTag: ${{ github.ref_name }}
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   release:
+    needs: changelog
     strategy:
         matrix:
             job:
@@ -81,3 +97,12 @@ jobs:
                     mv "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.zip" ../../../
                     echo "file_name=ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.zip" >> $GITHUB_OUTPUT
                   fi
+            # - name: Create release
+            #   uses: softprops/action-gh-release@v1
+            #   with:
+            #       name: ${{ github.ref_name }}
+            #       tag_name: ${{ github.ref_name }}
+            #       prerelease: false
+            #       body: ${{ needs.changelog.outputs.changelog }}
+            #       files: |
+            #           ${{ steps.artifacts.outputs.file_name }}
