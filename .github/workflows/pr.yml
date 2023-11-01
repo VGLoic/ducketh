@@ -62,7 +62,8 @@ jobs:
                   PLATFORM_NAME: ${{ matrix.job.platform }}
                   TARGET: ${{ matrix.job.target }}
                   ARCH: ${{ matrix.job.arch }}
-                  VERSION_NAME: ${{ github.ref_name }}
+                  # VERSION_NAME: ${{ github.ref_name }}
+                  VERSION_NAME: v0.0.1
               shell: bash
               run: |
                   echo "VERSION NAME -> ${VERSION_NAME}";
