@@ -44,7 +44,7 @@ jobs:
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   release:
-    needs: changelog
+    needs: [tests, build, check-format, changelog]
     strategy:
         matrix:
             job:
@@ -86,14 +86,14 @@ jobs:
               with:
                   targets: ${{ matrix.job.target }}
 
-            # Not yet understood
+            # Not yet understood, build works without it, would the binary at the end be invalid?
             - name: Apple M1 setup
               if: ${{ matrix.job.target == 'aarch64-apple-darwin' }}
               run: |
                   echo "SDKROOT=$(xcrun -sdk macosx --show-sdk-path)" >> $GITHUB_ENV
                   echo "MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version)" >> $GITHUB_ENV
 
-            # Not yet understood
+            # Not yet understood, build works without it, would the binary at the end be invalid?
             - name: Linux ARM setup
               if: ${{ matrix.job.target == 'aarch64-unknown-linux-gnu' }}
               run: |
@@ -102,7 +102,7 @@ jobs:
                   echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
 
             - name: Build binaries
-              # SVM_TARGET_PLATFORM not yet understood
+              # SVM_TARGET_PLATFORM not yet understood, build works without it, would the binary at the end be invalid?
               env:
                 SVM_TARGET_PLATFORM: ${{ matrix.job.svm_target_platform }}
               run: cargo build --release --target ${{ matrix.job.target }}
