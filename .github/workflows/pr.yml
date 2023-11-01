@@ -44,6 +44,9 @@ jobs:
     runs-on: ${{ matrix.job.os }}
     steps:
             - uses: actions/checkout@v3
+            - uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: ${{ matrix.job.target }}
             # - name: Apple M1 setup
             #   if: ${{ matrix.job.target == 'aarch64-apple-darwin' }}
             #   run: |
