@@ -93,7 +93,7 @@ jobs:
                   echo "SDKROOT=$(xcrun -sdk macosx --show-sdk-path)" >> $GITHUB_ENV
                   echo "MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version)" >> $GITHUB_ENV
 
-            # Not yet understood, build works without it, would the binary at the end be invalid?
+            # Needed for build to be successful
             - name: Linux ARM setup
               if: ${{ matrix.job.target == 'aarch64-unknown-linux-gnu' }}
               run: |
