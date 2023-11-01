@@ -4,30 +4,138 @@ on:
         tags:
             - "v*.*.*"
 jobs:
-    # Extracted from https://github.com/foundry-rs/foundry/blob/master/.github/workflows/release.yml
-    release:
-        strategy:
-            matrix:
-                job:
-                    - os: macos-latest
-                      platform: darwin
-                      target: x86_64-apple-darwin
-                      arch: amd64
-                      svm_target_platform: macosx-amd64
-                    - os: macos-latest
-                      platform: darwin
-                      target: aarch64-apple-darwin
-                      arch: arm64
-                      svm_target_platform: macosx-aarch64
-        name: ${{ matrix.job.target }} (${{ matrix.job.os }})
-        runs-on: ${{ matrix.job.os }}
-        steps:
-                - uses: actions/checkout@v3
-                # - name: Apple M1 setup
-                #   if: ${{ matrix.job.target == 'aarch64-apple-darwin' }}
-                #   run: |
-                #     echo "SDKROOT=$(xcrun -sdk macosx --show-sdk-path)" >> $GITHUB_ENV
-                #     echo "MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version)" >> $GITHUB_ENV
-                - name: Build binaries
-                  run: cargo build --release --target ${{ matrix.job.target }}
+  check-format:
+    runs-on: ubuntu-latest
+    name: Check format
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check format
+        run: cargo fmt --check
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build
+  tests:
+    runs-on: ubuntu-latest
+    name: Unit tests
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unit tests
+        run: cargo test
+        
+  # Changelog and release workflow extracted from https://github.com/foundry-rs/foundry/blob/master/.github/workflows/release.yml
+  changelog:
+    needs: [tests, build, check-format]
+    name: Build changelog
+    runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.build_changelog.outputs.changelog }}
+    steps:
+      - name: Build changelog
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@v4
+        with:
+            configuration: "./.github/changelog.json"
+            fromTag: "''"
+            toTag: ${{ github.ref_name }}
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  release:
+    needs: changelog
+    strategy:
+        matrix:
+            job:
+                # The OS is used for the runner
+                # The platform is a generic platform name
+                # The target is used by Cargo
+                # The arch is either 386, arm64 or amd64
+                # The svm target platform to use for the binary https://github.com/roynalnaruto/svm-rs/blob/84cbe0ac705becabdc13168bae28a45ad2299749/svm-builds/build.rs#L4-L24
+                - os: ubuntu-20.04
+                  platform: linux
+                  target: x86_64-unknown-linux-gnu
+                  arch: amd64
+                  svm_target_platform: linux-amd64
+                - os: ubuntu-20.04
+                  platform: linux
+                  target: aarch64-unknown-linux-gnu
+                  arch: arm64
+                  svm_target_platform: linux-aarch64
+                - os: macos-latest
+                  platform: darwin
+                  target: x86_64-apple-darwin
+                  arch: amd64
+                  svm_target_platform: macosx-amd64
+                - os: macos-latest
+                  platform: darwin
+                  target: aarch64-apple-darwin
+                  arch: arm64
+                  svm_target_platform: macosx-aarch64
+                - os: windows-latest
+                  platform: win32
+                  target: x86_64-pc-windows-msvc
+                  arch: amd64
+                  svm_target_platform: windows-amd64
+    name: ${{ matrix.job.target }} (${{ matrix.job.os }})
+    runs-on: ${{ matrix.job.os }}
+    steps:
+            - uses: actions/checkout@v3
+            - uses: dtolnay/rust-toolchain@stable # Handy for multiple targets
+              with:
+                  targets: ${{ matrix.job.target }}
 
+            # Not yet understood
+            - name: Apple M1 setup
+              if: ${{ matrix.job.target == 'aarch64-apple-darwin' }}
+              run: |
+                  echo "SDKROOT=$(xcrun -sdk macosx --show-sdk-path)" >> $GITHUB_ENV
+                  echo "MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx --show-sdk-platform-version)" >> $GITHUB_ENV
+
+            # Not yet understood
+            - name: Linux ARM setup
+              if: ${{ matrix.job.target == 'aarch64-unknown-linux-gnu' }}
+              run: |
+                  sudo apt-get update -y
+                  sudo apt-get install -y gcc-aarch64-linux-gnu
+                  echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
+
+            - name: Build binaries
+              # SVM_TARGET_PLATFORM not yet understood
+              env:
+                SVM_TARGET_PLATFORM: ${{ matrix.job.svm_target_platform }}
+              run: cargo build --release --target ${{ matrix.job.target }}
+            - name: Archive binaries
+              id: artifacts
+              env:
+                  PLATFORM_NAME: ${{ matrix.job.platform }}
+                  TARGET: ${{ matrix.job.target }}
+                  ARCH: ${{ matrix.job.arch }}
+                  VERSION_NAME: ${{ github.ref_name }}
+              shell: bash
+              run: |
+                  echo "VERSION NAME -> ${VERSION_NAME}";
+                  if [ "$PLATFORM_NAME" == "linux" ]; then
+                    tar -czvf "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" -C ./target/${TARGET}/release ducketh
+                    echo "file_name=ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" >> $GITHUB_OUTPUT
+                  elif [ "$PLATFORM_NAME" == "darwin" ]; then
+                    # We need to use gtar here otherwise the archive is corrupt.
+                    # See: https://github.com/actions/virtual-environments/issues/2619
+                    gtar -czvf "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" -C ./target/${TARGET}/release ducketh
+                    echo "file_name=ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.tar.gz" >> $GITHUB_OUTPUT
+                  else
+                    cd ./target/${TARGET}/release
+                    7z a -tzip "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.zip" ducketh.exe
+                    mv "ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.zip" ../../../
+                    echo "file_name=ducketh_${VERSION_NAME}_${PLATFORM_NAME}_${ARCH}.zip" >> $GITHUB_OUTPUT
+                  fi
+            - name: Create release
+              uses: softprops/action-gh-release@v1
+              with:
+                  name: ${{ github.ref_name }}
+                  tag_name: ${{ github.ref_name }}
+                  prerelease: false
+                  body: ${{ needs.changelog.outputs.changelog }}
+                  files: |
+                      ${{ steps.artifacts.outputs.file_name }}
